@@ -1,4 +1,14 @@
 <?php
+
+// Ngăn PHP tự gửi cookie
+ini_set('session.use_cookies', 0);
+ini_set('session.use_only_cookies', 0);
+
+// Nếu client gửi session_id qua header hoặc param
+if (!empty($_SERVER['HTTP_X_SESSION_ID'])) {
+    session_id($_SERVER['HTTP_X_SESSION_ID']);
+}
+
 // Start the session
 session_start();
 
@@ -17,10 +27,24 @@ if (!empty($_POST['submit'])) {
         $_SESSION['id'] = $user[0]['id'];
 
         $_SESSION['message'] = 'Login successful';
+
+         // Trả về session_id để client lưu vào localStorage
+        echo json_encode([
+            'status' => 'ok',
+            'session_id' => session_id(),
+            'message' => $_SESSION['message']
+        ]);
+        exit;
+
         header('location: list_users.php');
     }else {
         //Login failed
         $_SESSION['message'] = 'Login failed';
+         echo json_encode([
+            'status' => 'fail',
+            'message' => $_SESSION['message']
+        ]);
+        exit;
     }
 
 }
