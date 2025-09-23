@@ -16,7 +16,8 @@ require_once 'models/UserModel.php';
 $userModel = new UserModel();
 
 
-if (!empty($_POST['submit'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+ header("Content-Type: application/json; charset=UTF-8");
     $users = [
         'username' => $_POST['username'],
         'password' => $_POST['password']
@@ -28,15 +29,16 @@ if (!empty($_POST['submit'])) {
 
         $_SESSION['message'] = 'Login successful';
 
+
          // Trả về session_id để client lưu vào localStorage
         echo json_encode([
             'status' => 'ok',
             'session_id' => session_id(),
             'message' => $_SESSION['message']
         ]);
-        exit;
 
-        header('location: list_users.php');
+
+        
     }else {
         //Login failed
         $_SESSION['message'] = 'Login failed';
@@ -44,8 +46,8 @@ if (!empty($_POST['submit'])) {
             'status' => 'fail',
             'message' => $_SESSION['message']
         ]);
-        exit;
     }
+    exit;
 
 }
 
@@ -68,7 +70,7 @@ if (!empty($_POST['submit'])) {
                 </div>
 
                 <div style="padding-top:30px" class="panel-body" >
-                    <form method="post" class="form-horizontal" role="form">
+                    <form method="post" id="loginForm" class="form-horizontal" role="form">
 
                         <div class="margin-bottom-25 input-group">
                             <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
@@ -107,5 +109,49 @@ if (!empty($_POST['submit'])) {
         </div>
     </div>
 
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    let username = document.getElementById("login-username").value;
+    let password = document.getElementById("login-password").value;
+
+    fetch("http://192.168.33.10:8080/login.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "username=" + encodeURIComponent(username) + "&password=" + encodeURIComponent(password)
+    })
+    /*
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "ok") {
+            localStorage.setItem("session_id", data.session_id);
+            alert("Đăng nhập thành công!");
+window.location.href = "http://192.168.33.10:8080/list_users.php";
+        } else {
+            alert("Sai tài khoản hoặc mật khẩu");
+        }
+    })
+    .catch(err => console.error(err));
+*/
+ .then(res => res.text())  // 👈 đổi sang text để debug
+      .then(text => {
+          console.log("Raw response:", text); // debug
+          try {
+              let data = JSON.parse(text);
+              if (data.status === "ok") {
+                  localStorage.setItem("session_id", data.session_id);
+                  window.location.href = "list_users.php";
+              } else {
+                  alert("Sai tài khoản hoặc mật khẩu");
+              }
+          } catch (err) {
+              console.error("JSON parse error:", err);
+          }
+      })
+      .catch(err => console.error("Fetch error:", err));
+});
+
+    </script>
 </body>
 </html>
