@@ -1,39 +1,61 @@
 <?php
+
+// Ngăn PHP tự gửi cookie
+ini_set('session.use_cookies', 0);
+ini_set('session.use_only_cookies', 0);
+
+// Nếu client gửi session_id qua header hoặc param
+if (!empty($_SERVER['HTTP_X_SESSION_ID'])) {
+    session_id($_SERVER['HTTP_X_SESSION_ID']);
+}
+
 // Start the session
 session_start();
 
 require_once 'models/UserModel.php';
 $userModel = new UserModel();
 
-// Tạo mã thông báo CSRF nếu chưa có
+// Luôn đảm bảo có CSRF token trong session
 if (empty($_SESSION['csrf_token'])) {
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32)); // Tạo token ngẫu nhiên
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
 
-// Xử lý biểu mẫu đăng nhập
-if (!empty($_POST['submit'])) {
-    // Kiểm tra mã thông báo CSRF
-    if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
-        $_SESSION['message'] = 'CSRF token validation failed';
-    } else {
-        $users = [
-            'username' => $_POST['username'],
-            'password' => $_POST['password']
-        ];
-        $user = NULL;
-        if ($user = $userModel->auth($users['username'], $users['password'])) {
-            // Đăng nhập thành công
-            $_SESSION['id'] = $user[0]['id'];
-            $_SESSION['message'] = 'Login successful';
-            // Tạo lại CSRF token mới sau khi đăng nhập thành công
-            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-            header('location: list_users.php');
-            exit;
-        } else {
-            // Đăng nhập thất bại
-            $_SESSION['message'] = 'Login failed';
-        }
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+ header("Content-Type: application/json; charset=UTF-8");
+    $users = [
+        'username' => $_POST['username'],
+        'password' => $_POST['password']
+    ];
+    $user = NULL;
+    if ($user = $userModel->auth($users['username'], $users['password'])) {
+        //Login successful
+        $_SESSION['id'] = $user[0]['id'];
+
+        $_SESSION['message'] = 'Login successful';
+        // Sinh lại CSRF token mới sau login
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+
+
+         // Trả về session_id để client lưu vào localStorage
+        echo json_encode([
+            'status' => 'ok',
+            'session_id' => session_id(),
+            'csrf_token' => $_SESSION['csrf_token'],
+            'message' => $_SESSION['message']
+        ]);
+
+
+        
+    }else {
+        //Login failed
+        $_SESSION['message'] = 'Login failed';
+         echo json_encode([
+            'status' => 'fail',
+            'message' => $_SESSION['message']
+        ]);
     }
+    exit;
+
 }
 ?>
 
@@ -62,7 +84,7 @@ if (!empty($_POST['submit'])) {
                     </div>
                 <?php endif; ?>
 
-                <form method="post" class="form-horizontal" role="form">
+                <form id="formLogin" class="form-horizontal" role="form">
                     <!-- Thêm trường ẩn cho CSRF token -->
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
 
@@ -100,6 +122,34 @@ if (!empty($_POST['submit'])) {
         </div>
     </div>
 </div>
+ <script>
+    document.getElementById("formLogin").addEventListener("submit", function(e) {
+    e.preventDefault(); // không reload trang
+    let username = document.getElementById("login-username").value;
+    let password = document.getElementById("login-password").value;
 
+    // Gọi login
+fetch("login.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: "username=" + encodeURIComponent(username) + "&password=" + encodeURIComponent(password)
+})
+.then(res => res.json())
+.then(data => {
+    if (data.status === "ok") {
+
+        // Lưu session_id + csrf_token
+        localStorage.setItem("session_id", data.session_id);
+        localStorage.setItem("csrf_token", data.csrf_token);
+        alert("Đăng nhập thành công!");
+        window.location.href = "http://192.168.33.10:8080/list_users.php";
+        
+    } else {
+        alert("Sai tài khoản hoặc mật khẩu");
+    }
+    })
+    .catch(err => console.error(err));
+});
+ </script>
 </body>
 </html>
