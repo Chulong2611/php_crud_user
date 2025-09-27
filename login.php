@@ -29,6 +29,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user = NULL;
     if ($user = $userModel->auth($users['username'], $users['password'])) {
         //Login successful
+
+         // 🔒 Sinh session_id mới
+    session_regenerate_id(true); 
         $_SESSION['id'] = $user[0]['id'];
 
         // Sinh lại CSRF token mới sau login

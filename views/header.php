@@ -46,7 +46,7 @@ if(!empty($_GET['keyword'])) {
                                   <li><a id="profileLink" href="#">Profile</a></li>
                             <li role="separator" class="divider"></li>
                             <li><a href="login.php">Login</a></li>
-                            <li><a href="logout.php">Logout</a></li>
+                            <li><a href="#" id="logoutBtn">Logout</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -69,6 +69,7 @@ if(!empty($_GET['keyword'])) {
         document.getElementById("profileLink").setAttribute("href", "view_user.php?session_id=" + encodeURIComponent(sessionId));
     }
 });*/
+// xử lý profile link
 document.getElementById("profileLink").addEventListener("click", function(e) {
     e.preventDefault();
 
@@ -90,6 +91,30 @@ document.getElementById("profileLink").addEventListener("click", function(e) {
         document.open();
         document.write(html);
         document.close();
+    })
+    .catch(err => console.error(err));
+});
+
+// xử lý logout
+document.getElementById("logoutBtn").addEventListener("click", function(e) {
+    e.preventDefault();
+    fetch("logout.php", {
+        method: "POST",
+        headers: {
+            "X-SESSION-ID": localStorage.getItem("session_id") || ""
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "ok") {
+            // Xóa session id ở client
+            localStorage.removeItem("session_id");
+            localStorage.removeItem("csrf_token");
+            // Redirect về login
+            window.location.href = "login.php";
+        } else {
+            alert("Logout failed!");
+        }
     })
     .catch(err => console.error(err));
 });
