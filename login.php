@@ -31,10 +31,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         //Login successful
         $_SESSION['id'] = $user[0]['id'];
 
-        $_SESSION['message'] = 'Login successful';
         // Sinh lại CSRF token mới sau login
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-
+        
+        $_SESSION['message'] = 'Login successful';
 
          // Trả về session_id để client lưu vào localStorage
         echo json_encode([

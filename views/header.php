@@ -43,7 +43,7 @@ if(!empty($_GET['keyword'])) {
                             Account <span class="caret"></span>
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a href="view_user.php?id=<?php echo $id ?>">Profile</a></li>
+                                  <li><a id="profileLink" href="#">Profile</a></li>
                             <li role="separator" class="divider"></li>
                             <li><a href="login.php">Login</a></li>
                             <li><a href="logout.php">Logout</a></li>
@@ -61,3 +61,36 @@ if(!empty($_GET['keyword'])) {
         </div>
     <?php } ?>
 </div>
+
+<script>
+/*document.addEventListener("DOMContentLoaded", function() {
+    let sessionId = localStorage.getItem("session_id");
+    if (sessionId) {
+        document.getElementById("profileLink").setAttribute("href", "view_user.php?session_id=" + encodeURIComponent(sessionId));
+    }
+});*/
+document.getElementById("profileLink").addEventListener("click", function(e) {
+    e.preventDefault();
+
+    let sessionId = localStorage.getItem("session_id");
+    if (!sessionId) {
+        alert("Bạn chưa đăng nhập!");
+        return;
+    }
+
+    fetch("view_user.php", {
+        method: "GET",
+        headers: {
+            "X-Session-Id": sessionId
+        }
+    })
+    .then(res => res.text())
+    .then(html => {
+        // thay thế toàn bộ nội dung trang bằng profile
+        document.open();
+        document.write(html);
+        document.close();
+    })
+    .catch(err => console.error(err));
+});
+</script>
