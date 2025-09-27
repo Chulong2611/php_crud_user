@@ -15,11 +15,29 @@ $userModel = new UserModel();
 $user = null;
 
 // Nếu đã login thì lấy user từ session
-if (!empty($_SESSION['id'])) {
+/*if (!empty($_SESSION['id'])) {
+    $id = $_SESSION['id'];
+    $user = $userModel->findUserById($id);
+}*/
+// 🔒 Kiểm tra bảo mật session
+if (
+    empty($_SESSION['id']) ||
+    empty($_SESSION['ip']) || $_SESSION['ip'] !== $_SERVER['REMOTE_ADDR'] ||
+    empty($_SESSION['ua']) || $_SESSION['ua'] !== $_SERVER['HTTP_USER_AGENT'] ||
+    empty($_SESSION['fingerprint']) ||
+    $_SESSION['fingerprint'] !== ($_SERVER['HTTP_X_FINGERPRINT'] ?? '')
+) {
+    // Nếu sai thông tin => hủy session & báo chưa login
+    $_SESSION = [];
+    session_destroy();
+    $user = null;
+} else {
+    // Nếu hợp lệ thì lấy thông tin user
     $id = $_SESSION['id'];
     $user = $userModel->findUserById($id);
 }
 ?>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -50,7 +68,7 @@ if (!empty($_SESSION['id'])) {
         </form>
     <?php } else { ?>
         <div class="alert alert-danger" role="alert">
-            Bạn chưa đăng nhập!
+            Bạn chưa đăng nhập
         </div>
     <?php } ?>
 </div>

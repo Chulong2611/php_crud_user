@@ -30,7 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($user = $userModel->auth($users['username'], $users['password'])) {
         //Login successful
         $_SESSION['id'] = $user[0]['id'];
+        $_SESSION['ip'] = $_SERVER['REMOTE_ADDR'];
+        $_SESSION['ua'] = $_SERVER['HTTP_USER_AGENT'];
 
+        // 🔑 Tạo fingerprint duy nhất cho session này
+        $_SESSION['fingerprint'] = bin2hex(random_bytes(32));
         // Sinh lại CSRF token mới sau login
         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
         
@@ -41,6 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'status' => 'ok',
             'session_id' => session_id(),
             'csrf_token' => $_SESSION['csrf_token'],
+            'fingerprint' => $_SESSION['fingerprint'],
             'message' => $_SESSION['message']
         ]);
 
@@ -141,6 +146,7 @@ fetch("login.php", {
         // Lưu session_id + csrf_token
         localStorage.setItem("session_id", data.session_id);
         localStorage.setItem("csrf_token", data.csrf_token);
+        localStorage.setItem("fingerprint", data.fingerprint);
         alert("Đăng nhập thành công!");
         window.location.href = "http://192.168.33.10:8080/list_users.php";
         

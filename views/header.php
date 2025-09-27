@@ -53,7 +53,7 @@ if(!empty($_GET['keyword'])) {
             </div><!-- /.navbar-collapse -->
     </nav>
     <?php if(!empty($_SESSION['message'])){ ?>
-        <div class="alert alert-warning" role="alert">
+        <div id="alertBox" class="alert alert-warning" role="alert">
             <?php
             echo $_SESSION['message'];
             unset($_SESSION['message']);
@@ -78,10 +78,17 @@ document.getElementById("profileLink").addEventListener("click", function(e) {
         return;
     }
 
+    let fingerprint = localStorage.getItem("fingerprint");
+    if (!fingerprint) {
+         alert("XSS phát hiện! Vui lòng đăng nhập lại.");
+    return;
+    }
+
     fetch("view_user.php", {
         method: "GET",
         headers: {
             "X-Session-Id": sessionId
+            ,"X-Fingerprint": fingerprint
         }
     })
     .then(res => res.text())
